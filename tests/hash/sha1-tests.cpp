@@ -1,7 +1,16 @@
 #include <myrmo/test/assert.h>
 #include <myrmo/hash/sha1.h>
 
-#include "long_strings.h"
+#include <cmrc/cmrc.hpp>
+
+CMRC_DECLARE(test_data);
+
+static std::string get_file(const std::string &name)
+{
+	auto fs = cmrc::test_data::get_filesystem();
+	auto file = fs.open(name);
+	return std::string(file.begin(), file.size());
+}
 
 void test_short_strings()
 {
@@ -58,14 +67,15 @@ void test_long_strings()
 {
 	std::string hash;
 
-	hash = myrmo::hash::sha1(long_strings::lorem_ipsum_10_paragraphs);
-	MYRMO_ASSERT(hash == "56bcb1962985e684147828b8a489e929ec7ea879");
 
-	hash = myrmo::hash::sha1(long_strings::lorem_ipsum_10_paragraphs_raw);
-	MYRMO_ASSERT(hash == "8312fa7072dbd91d4c48c3346f7c248ae94ac84b");
+	hash = myrmo::hash::sha1(get_file("test_data/lorem_ipsum_10_paragraphs.txt"));
+	MYRMO_ASSERT(hash == "39f126116f2c5fef838d8bd69c49e3caacdc5cdd");
 
-	hash = myrmo::hash::sha1(long_strings::random_org_1000_20);
-	MYRMO_ASSERT(hash == "84799a65a1543749b579dc7156743da0b573b926");
+	hash = myrmo::hash::sha1(get_file("test_data/lorem_ipsum_10_paragraphs_raw.txt"));
+	MYRMO_ASSERT(hash == "9558666d2da363bc4e29da5cdd31c2d2dcc13721");
+
+	hash = myrmo::hash::sha1(get_file("test_data/random_org_1000_20.txt"));
+	MYRMO_ASSERT(hash == "3d87f44221bb90791edc3cd9bdd9134f8e8a973d");
 }
 
 void test_urls()

@@ -1,33 +1,3 @@
-#pragma once
-#include <string>
-
-namespace long_strings
-{
-	/// 10 paragraphs generated from http://generator.lorem-ipsum.info/. No newlines
-	const std::string lorem_ipsum_10_paragraphs = "Lorem ipsum dolor sit amet, an noster iriure scaevola sed, ei labore meliore disputationi sit. Cu movet affert dignissim eos. Quo id congue vocent aliquam, cu congue utroque vim. His ea malorum reformidans, persius phaedrum sea ad. Tale laoreet habemus vel in. At vix putent aliquam propriae, mandamus tincidunt maiestatis id usu, tota facete contentiones per ea. Id mei maiorum consetetur liberavisse, illud nonumes maluisset mei id. Ius in dolor dicam graeco, mei at congue placerat, iuvaret tacimates sea cu. Feugiat imperdiet cu vix. Admodum instructior pri no. Natum patrioque eam ne, ei eos natum debet. Ea delicata tincidunt per, novum omnium perfecto an qui. Ea facilisi disputando nam, mei an unum saperet inimicus. Maiorum cotidieque pri et. Eum utamur fuisset pertinax ei, his eu latine fastidii officiis, ea exerci tamquam petentium nam. No quo error quaerendum, ex usu lorem legimus. Mea offendit electram conclusionemque id, te menandri inciderint pri, pri eripuit eruditi equidem ut. Ne sed discere periculis, pri id dicant graece. Illud assum conclusionemque at pri. Ei eam ludus postea interesset, cu quando quidam nec, regione moderatius id his. Sonet vocibus accommodare per eu, te idque debitis eam. An est erant voluptatum quaerendum, nisl consequuntur ne vel, eu ornatus praesent electram per. Et tale dolorum omittantur sea, id eius feugiat dissentiet duo. Eius numquam eos ei, ei tibique scribentur interpretaris mei. Id nominati partiendo has, quo ne rebum soluta sensibus. Vim ex diam concludaturque, eum partem integre bonorum cu. In quo mollis mediocrem instructior. No viris melius posidonium nam, in omnium voluptaria interpretaris duo, quot debet inimicus sea ei. Ne facete hendrerit est, dicat dicit gloriatur ei pro. Delenit impedit eu has, magna doctus reprimique mel et. Ea movet dolores efficiendi has. Posse choro essent cum ex, nec veri putent alienum ei. Et iisque denique dissentiunt usu, ei duo eripuit electram forensibus. Quo partiendo facilisis patrioque et. Vix fugit altera integre ea, deserunt adversarium ad usu, sensibus democritum inciderint pro ad. In pro dicant platonem theophrastus, vocent albucius suscipit ne eum. Viris integre ne est, consul nominati complectitur nec at, nibh consectetuer ut nam. Qui ei adipisci tincidunt temporibus. Mea in sint duis, appetere concludaturque no pri. Phaedrum senserit efficiantur vis no, probo elaboraret sit ex. No dico facete sadipscing pri. Per et case verear quaerendum. Inermis nominavi forensibus ne mei, quaeque fierent interesset qui in, pri alienum ponderum quaestio ut. Possim utamur imperdiet ex mei, eu sed tibique democritum mnesarchum, ut quas fugit tacimates duo. At quo labitur sanctus. Sea liber prompta sententiae ei. An vidisse necessitatibus usu, alii ubique sit ea. Vis vidit iudico apeirian an, nullam aperiri referrentur te nec, possim blandit an vis. Eum inani nostrud ocurreret in, pro odio omnes causae ne.";
-
-	const char lorem_ipsum_10_paragraphs_raw[] = R"lorem_ipsum(
-Lorem ipsum dolor sit amet, an noster iriure scaevola sed, ei labore meliore disputationi sit. Cu movet affert dignissim eos. Quo id congue vocent aliquam, cu congue utroque vim. His ea malorum reformidans, persius phaedrum sea ad.
-
-Tale laoreet habemus vel in. At vix putent aliquam propriae, mandamus tincidunt maiestatis id usu, tota facete contentiones per ea. Id mei maiorum consetetur liberavisse, illud nonumes maluisset mei id. Ius in dolor dicam graeco, mei at congue placerat, iuvaret tacimates sea cu. Feugiat imperdiet cu vix.
-
-Admodum instructior pri no. Natum patrioque eam ne, ei eos natum debet. Ea delicata tincidunt per, novum omnium perfecto an qui. Ea facilisi disputando nam, mei an unum saperet inimicus. Maiorum cotidieque pri et.
-
-Eum utamur fuisset pertinax ei, his eu latine fastidii officiis, ea exerci tamquam petentium nam. No quo error quaerendum, ex usu lorem legimus. Mea offendit electram conclusionemque id, te menandri inciderint pri, pri eripuit eruditi equidem ut. Ne sed discere periculis, pri id dicant graece. Illud assum conclusionemque at pri. Ei eam ludus postea interesset, cu quando quidam nec, regione moderatius id his.
-
-Sonet vocibus accommodare per eu, te idque debitis eam. An est erant voluptatum quaerendum, nisl consequuntur ne vel, eu ornatus praesent electram per. Et tale dolorum omittantur sea, id eius feugiat dissentiet duo. Eius numquam eos ei, ei tibique scribentur interpretaris mei.
-
-Id nominati partiendo has, quo ne rebum soluta sensibus. Vim ex diam concludaturque, eum partem integre bonorum cu. In quo mollis mediocrem instructior. No viris melius posidonium nam, in omnium voluptaria interpretaris duo, quot debet inimicus sea ei.
-
-Ne facete hendrerit est, dicat dicit gloriatur ei pro. Delenit impedit eu has, magna doctus reprimique mel et. Ea movet dolores efficiendi has. Posse choro essent cum ex, nec veri putent alienum ei. Et iisque denique dissentiunt usu, ei duo eripuit electram forensibus.
-
-Quo partiendo facilisis patrioque et. Vix fugit altera integre ea, deserunt adversarium ad usu, sensibus democritum inciderint pro ad. In pro dicant platonem theophrastus, vocent albucius suscipit ne eum. Viris integre ne est, consul nominati complectitur nec at, nibh consectetuer ut nam. Qui ei adipisci tincidunt temporibus. Mea in sint duis, appetere concludaturque no pri.
-
-Phaedrum senserit efficiantur vis no, probo elaboraret sit ex. No dico facete sadipscing pri. Per et case verear quaerendum. Inermis nominavi forensibus ne mei, quaeque fierent interesset qui in, pri alienum ponderum quaestio ut.
-
-Possim utamur imperdiet ex mei, eu sed tibique democritum mnesarchum, ut quas fugit tacimates duo. At quo labitur sanctus. Sea liber prompta sententiae ei. An vidisse necessitatibus usu, alii ubique sit ea. Vis vidit iudico apeirian an, nullam aperiri referrentur te nec, possim blandit an vis. Eum inani nostrud ocurreret in, pro odio omnes causae ne.)lorem_ipsum";
-
-	const char random_org_1000_20[] = R"random(
 yBIFklIg8zdfiTTOTJLP
 bac6OZXOdKCjbuUSrL76
 qn4VHmJdDm9klHrxcESV
@@ -1028,6 +998,3 @@ PC4SLQZu2EqALirTXWxd
 a7ZUr2BoHNsUiL1ScZLu
 umcB1052JA2fw8JgAuXP
 TLdGf4oK2agh616jsMs2
-)random";
-
-} // End namespace long_strings
