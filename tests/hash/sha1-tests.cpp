@@ -67,7 +67,6 @@ void test_long_strings()
 {
 	std::string hash;
 
-
 	hash = myrmo::hash::sha1(get_file("test_data/lorem_ipsum_10_paragraphs.txt"));
 	MYRMO_ASSERT(hash == "39f126116f2c5fef838d8bd69c49e3caacdc5cdd");
 
