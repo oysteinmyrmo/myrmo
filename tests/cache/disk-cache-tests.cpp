@@ -168,10 +168,82 @@ void test_insert_read_delete_all_images()
 
 void test_disk_cache_eviction_policy()
 {
-	// 1. Create small disk cache. Add files so that the maximum size is exceeded.
-	// 2. Check that the correct files and number of files exists.
-	// 3. Verify LRU order.
-	// 4. Do multiple times: a) get a file and b) check LRU order
+	using namespace myrmo::cache;
+	const size_t cacheSizeInMiB = 1;
+	const size_t cacheSizeInBytes = cacheSizeInMiB * 1048576;
+
+	{
+		LRUDiskCache cache(MYRMO_TESTS_CACHE_DIR, myrmo::hash::sha1, cacheSizeInMiB); // 1 MiB disk cache
+		std::vector<char> data;
+
+		// Assert no images exist.
+		for (size_t i = 0; i < IMAGE_COUNT; i++)
+			MYRMO_ASSERT(imageExists(cache, i, &data) == LRUDiskCache::Error::FileDoesNotExist);
+
+		// Assert insertion of all images ok.
+		for (size_t i = 0; i < IMAGE_COUNT; i++)
+			MYRMO_ASSERT(insertImage(cache, i) == LRUDiskCache::Error::NoError);
+
+		// Assert only the last MiB og image data is in the cache.
+		size_t size = 0;
+		int pos = IMAGE_COUNT - 1;
+		while ((pos >= 0) && (size < (cacheSizeInBytes - images[pos].size)))
+		{
+			size += images[pos].size;
+			--pos;
+		}
+
+		MYRMO_ASSERT(cache.size() == size);
+		MYRMO_ASSERT(cache.size() < cacheSizeInBytes);
+		MYRMO_ASSERT(cache.count() == 6);
+
+		size_t asserted = 0;
+		for (int i = IMAGE_COUNT - 1; i >= 0; i--)
+		{
+			if (asserted >= cache.count())
+			{
+				MYRMO_ASSERT(imageExists(cache, i, &data) == myrmo::cache::LRUDiskCache::Error::FileDoesNotExist);
+			}
+			else
+			{
+				// Note: LRU order will be reversed because of this.
+				MYRMO_ASSERT(imageExists(cache, i, &data) == myrmo::cache::LRUDiskCache::Error::NoError);
+				++asserted;
+			}
+		}
+
+		// Will evict images IMAGE_COUNT - 1 and IMAGE_COUNT - 2.
+		MYRMO_ASSERT(insertImage(cache, 0) == LRUDiskCache::Error::NoError);
+		MYRMO_ASSERT(cache.size() == 977682);
+		MYRMO_ASSERT(cache.count() == 5);
+		MYRMO_ASSERT(imageExists(cache, 0, &data) == myrmo::cache::LRUDiskCache::Error::NoError);
+		MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 1, &data) == myrmo::cache::LRUDiskCache::Error::FileDoesNotExist);
+		MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 2, &data) == myrmo::cache::LRUDiskCache::Error::FileDoesNotExist);
+		MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 3, &data) == myrmo::cache::LRUDiskCache::Error::NoError);
+
+		// Will evict IMAGE_COUNT - 4 and IMAGE_COUNT - 5
+		MYRMO_ASSERT(insertImage(cache, 7) == LRUDiskCache::Error::NoError);
+		MYRMO_ASSERT(cache.size() == 892603);
+		MYRMO_ASSERT(cache.count() == 4);
+		MYRMO_ASSERT(imageExists(cache, 7, &data) == myrmo::cache::LRUDiskCache::Error::NoError);
+		MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 4, &data) == myrmo::cache::LRUDiskCache::Error::FileDoesNotExist);
+		MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 5, &data) == myrmo::cache::LRUDiskCache::Error::FileDoesNotExist);
+		MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 6, &data) == myrmo::cache::LRUDiskCache::Error::NoError);
+	}
+
+	LRUDiskCache cache(MYRMO_TESTS_CACHE_DIR, myrmo::hash::sha1);
+	std::vector<char> data;
+
+	MYRMO_ASSERT(cache.size() == 892603);
+	MYRMO_ASSERT(cache.count() == 4);
+	MYRMO_ASSERT(imageExists(cache, 7, &data) == myrmo::cache::LRUDiskCache::Error::NoError);
+	MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 4, &data) == myrmo::cache::LRUDiskCache::Error::FileDoesNotExist);
+	MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 5, &data) == myrmo::cache::LRUDiskCache::Error::FileDoesNotExist);
+	MYRMO_ASSERT(imageExists(cache, IMAGE_COUNT - 6, &data) == myrmo::cache::LRUDiskCache::Error::NoError);
+
+	MYRMO_ASSERT(cache.clear() == LRUDiskCache::Error::NoError);
+	MYRMO_ASSERT(cache.size() == 0);
+	MYRMO_ASSERT(cache.count() == 0);
 }
 
 int main()
@@ -183,5 +255,7 @@ int main()
 	}
 
 	test_insert_read_delete_all_images();
+	test_disk_cache_eviction_policy();
+
 	return 0;
 }

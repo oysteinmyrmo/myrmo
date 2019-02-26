@@ -290,7 +290,7 @@ namespace myrmo { namespace cache
 			return Error::NoError;
 		}
 
-		inline Error evictUntilEnoughSpace(size_t size)
+		inline Error evictUntilEnoughSpace(const size_t size)
 		{
 			Error error = Error::NoError;
 
@@ -305,13 +305,12 @@ namespace myrmo { namespace cache
 				}
 				else
 				{
-					const std::string& hash = mLRUData.back();
+					const std::string hash = mLRUData.back();
 					error = removeFile(hash);
 					assert(error == Error::NoError); // The cache is corrupt if we end up removing files that does not exist.
 					if (error == Error::NoError)
 					{
 						errorCount = 0;
-						mLRUData.pop_back();
 					}
 					else
 					{
