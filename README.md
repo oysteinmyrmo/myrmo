@@ -5,4 +5,5 @@ Myrmo is my collection of algorithms and data structures I write for fun and whe
 Current implementations are:
 
 * SHA1
+* Disk Cache
 
