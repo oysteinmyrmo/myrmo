@@ -19,6 +19,8 @@
  * SOFTWARE.
  */
 #pragma once
+#include <myrmo/cache/policy.h>
+
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -26,11 +28,12 @@
 #include <fstream>
 #include <list>
 #include <algorithm>
+#include <memory>
 
 namespace myrmo { namespace cache
 {
 	// TODO: Support streaming of large files, both read and write.
-	class LRUDiskCache
+	class DiskCache
 	{
 	public:
 		enum class Error : unsigned int
@@ -47,47 +50,63 @@ namespace myrmo { namespace cache
 
 		typedef std::string (*hashFunction)(const std::string& uri);
 
-		LRUDiskCache() = delete;
-		LRUDiskCache(const LRUDiskCache& cache) = delete;
+		DiskCache() = delete;
+		DiskCache(const DiskCache& cache) = delete;
 
-		LRUDiskCache(const std::string& cacheDir, hashFunction func, size_t cacheSizeInMegaBytes = 50)
+		DiskCache(const std::string& cacheDir, hashFunction func, policy::EvictionPolicy* policy, size_t cacheSizeInMegaBytes = 50)
 			: mCacheDir(cacheDir)
 			, mHashFunction(func)
+			, mPolicy(policy)
 			, mMaxCacheSize(cacheSizeInMegaBytes * 1048576)
 			, mCacheSize(0)
 		{
-			Error error = readIndexFile();
-			assert(error == Error::NoError);
+			const std::string hash(mHashFunction("myrmo_disk_cache_index"));
+			const std::string fName = file_path(hash);
+			mPolicy->setHashSize(hash.size());
+
+			std::vector<char> data;
+			Error error = read("myrmo_disk_cache_index", &data, true);
+			if (error != Error::NoError)
+				data.clear();
+			mPolicy->setIndexData(data);
+
+			// Calculate initial disk cache size.
+			mPolicy->forEach([&](const std::string& hash)
+			{
+				std::ifstream f(file_path(hash), std::ifstream::ate | std::ifstream::binary);
+				if (f.is_open())
+					mCacheSize += f.tellg();
+				f.close();
+			});
 		}
 
-		~LRUDiskCache()
+		~DiskCache()
 		{
 			Error error = writeIndexFile();
 			assert(error == Error::NoError);
 		}
 
-		Error read(const std::string& uri, std::vector<char>* data)
+		Error read(const std::string& uri, std::vector<char>* data, bool isIndexFile = false)
 		{
 			Error error = Error::FileDoesNotExist;
 			const std::string hash(mHashFunction(uri));
-			std::ifstream f(file_path(hash), std::ios::binary);
 
-			if (f.is_open())
+			if (isIndexFile || (mPolicy->exists(hash) == policy::Error::NoError))
 			{
-				f.seekg(0, std::ios::end);
-				const size_t fSize = f.tellg();
-				f.seekg(0, std::ios::beg);
+				std::ifstream f(file_path(hash), std::ios::binary);
 
-				data->resize(fSize, '\0');
-				f.read(&(*data)[0], fSize);
-				f.close();
+				if (f.is_open())
+				{
+					f.seekg(0, std::ios::end);
+					const size_t fSize = f.tellg();
+					f.seekg(0, std::ios::beg);
 
-				auto it = std::find(mLRUData.begin(), mLRUData.end(), hash);
-				assert(it != mLRUData.end()); // The item must exist in the LRU structure when we could read it from disk.
-				if (it != mLRUData.end())
-					mLRUData.splice(mLRUData.begin(), mLRUData, it); // Move item to front
+					data->resize(fSize, '\0');
+					f.read(&(*data)[0], fSize);
+					f.close();
 
-				error = Error::NoError;
+					error = Error::NoError;
+				}
 			}
 
 			return error;
@@ -98,6 +117,7 @@ namespace myrmo { namespace cache
 			Error error = Error::NoError;
 			const std::string hash(mHashFunction(uri));
 			const std::string fName(file_path(hash));
+			assert(mPolicy->exists(hash) == policy::Error::DoesNotExist);
 
 			std::ifstream i(fName, std::ios::binary);
 			if (i.good())
@@ -115,7 +135,7 @@ namespace myrmo { namespace cache
 					{
 						f.write(data, size);
 						mCacheSize += size;
-						mLRUData.push_front(hash);
+						mPolicy->add(hash);
 						error = writeIndexFile();
 					}
 					f.close();
@@ -138,25 +158,19 @@ namespace myrmo { namespace cache
 		{
 			Error error = Error::NoError;
 
-			// Copy the list because removeFile alters mLRUData.
-			std::vector<std::string> copy;
-			copy.reserve(mLRUData.size());
-			for (const auto& it : mLRUData)
-				copy.emplace_back(it);
-
-			for (const auto& item : copy)
+			std::string hash = mPolicy->back();
+			while (hash.size())
 			{
-				error = removeFile(item);
+				error = removeFile(hash);
 				if (error != Error::NoError)
 					break;
+
+				mPolicy->remove(hash);
+				hash = mPolicy->back();
 			}
 
 			if (error == Error::NoError)
-			{
-				assert(mLRUData.size() == 0);
-				error = removeIndexFile();
-				mCacheSize = 0;
-			}
+				assert(mCacheSize == 0);
 
 			return error;
 		}
@@ -176,11 +190,11 @@ namespace myrmo { namespace cache
 
 		size_t count() const
 		{
-			return mLRUData.size(); // Disregarding index file
+			return mPolicy->count(); // Disregarding index file
 		}
 
 	private:
-		inline Error removeFile(const std::string& hash)
+		inline Error removeFile(const std::string& hash, bool isIndexFile = false)
 		{
 			Error error = Error::NoError;
 
@@ -196,9 +210,8 @@ namespace myrmo { namespace cache
 				if (removed)
 				{
 					mCacheSize -= fSize;
-					auto it = std::find(mLRUData.begin(), mLRUData.end(), hash);
-					if (it != mLRUData.end()) // The index file is not in the mLRUData, so we must allow it != mLRUData.end()
-						mLRUData.erase(it);
+					if (!isIndexFile)
+						mPolicy->remove(hash);
 				}
 				else
 				{
@@ -222,72 +235,19 @@ namespace myrmo { namespace cache
 		{
 			Error error = Error::CouldNotWriteIndexFile;
 
-			const std::string hash(mHashFunction("myrmo_lru_cache_data"));
+			const std::string hash(mHashFunction("myrmo_disk_cache_index"));
 			const std::string fName = mCacheDir + "/" + hash;
 			std::ofstream f(fName, std::ios::binary);
 
 			if (f.is_open())
 			{
-				const size_t hashSize = hash.size();
-				for (auto it = mLRUData.begin(); it != mLRUData.end(); it++)
-				{
-					assert(it->size() == hashSize); // If not the cache would be corrupted.
-					f.write(it->c_str(), hashSize);
-				}
-
+				std::string indexData = mPolicy->getIndexData();
+				f.write(indexData.c_str(), indexData.size());
 				f.close();
 				error = Error::NoError;
 			}
 
 			return error;
-		}
-
-		inline Error readIndexFile()
-		{
-			Error error = Error::NoError;
-
-			const std::string hash(mHashFunction("myrmo_lru_cache_data"));
-			const std::string fName = file_path(hash);
-			std::ifstream f(fName, std::ios::binary);
-
-			if (f.is_open())
-			{
-				const size_t hashSize = hash.size();
-
-				f.seekg(0, std::ios::end);
-				const size_t fSize = f.tellg();
-				assert((fSize % hashSize) == 0); // Otherwise the data is corrupted
-				f.seekg(0, std::ios::beg);
-
-				size_t pos = 0;
-				while (pos < fSize)
-				{
-					std::string element;
-					element.resize(hashSize, '\0');
-					f.read(&element[0], hashSize);
-
-					std::ifstream currentFile(file_path(element), std::ifstream::ate | std::ifstream::binary);
-					if (currentFile.is_open())
-					{
-						mCacheSize += currentFile.tellg();
-						mLRUData.emplace_back(element);
-					}
-
-					currentFile.close();
-					pos += hashSize;
-				}
-
-				f.close();
-			}
-
-			return error;
-		}
-
-		inline Error removeIndexFile()
-		{
-			const std::string hash(mHashFunction("myrmo_lru_cache_data"));
-			removeFile(hash);
-			return Error::NoError;
 		}
 
 		inline Error evictUntilEnoughSpace(const size_t size)
@@ -297,7 +257,7 @@ namespace myrmo { namespace cache
 			size_t errorCount = 0;
 			while ((mCacheSize + size) > mMaxCacheSize)
 			{
-				if (mLRUData.empty())
+				if (mPolicy->count() == 0)
 				{
 					error = Error::FileSizeGreaterThanMaxCacheSize;
 					assert(mCacheSize == 0); // We should not end up here unless mCacheSize is 0.
@@ -305,7 +265,7 @@ namespace myrmo { namespace cache
 				}
 				else
 				{
-					const std::string hash = mLRUData.back();
+					const std::string hash = mPolicy->back();
 					error = removeFile(hash);
 					assert(error == Error::NoError); // The cache is corrupt if we end up removing files that does not exist.
 					if (error == Error::NoError)
@@ -330,8 +290,8 @@ namespace myrmo { namespace cache
 	private:
 		std::string  mCacheDir;
 		hashFunction mHashFunction;
+		std::unique_ptr<policy::EvictionPolicy> mPolicy;
 
-		std::list<std::string> mLRUData; // Least Recenty Used is at the end.
 		const size_t mMaxCacheSize;
 		size_t mCacheSize; // In megabytes
 	};
