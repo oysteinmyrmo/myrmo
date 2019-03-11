@@ -26,7 +26,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
-#include <list>
 #include <algorithm>
 #include <memory>
 
@@ -254,20 +253,18 @@ namespace myrmo { namespace cache
 		{
 			Error error = Error::NoError;
 
-			size_t errorCount = 0;
-			while ((mCacheSize + size) > mMaxCacheSize)
+			if (size > mMaxCacheSize)
 			{
-				if (mPolicy->count() == 0)
-				{
-					error = Error::FileSizeGreaterThanMaxCacheSize;
-					assert(mCacheSize == 0); // We should not end up here unless mCacheSize is 0.
-					break;
-				}
-				else
+				error = Error::FileSizeGreaterThanMaxCacheSize;
+			}
+			else
+			{
+				size_t errorCount = 0;
+				while ((mCacheSize + size) > mMaxCacheSize)
 				{
 					const std::string hash = mPolicy->back();
-					error = removeFile(hash);
-					assert(error == Error::NoError); // The cache is corrupt if we end up removing files that does not exist.
+					error = removeFile(hash); // Also calls mPolicy->remove(hash).
+					assert(error == Error::NoError); // The cache is corrupt if we end up removing files that do not exist.
 					if (error == Error::NoError)
 					{
 						errorCount = 0;
@@ -293,7 +290,7 @@ namespace myrmo { namespace cache
 		std::unique_ptr<policy::EvictionPolicy> mPolicy;
 
 		const size_t mMaxCacheSize;
-		size_t mCacheSize; // In megabytes
+		size_t mCacheSize;
 	};
 
 }} // End namespace myrmo::cache

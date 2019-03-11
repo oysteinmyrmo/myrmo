@@ -169,12 +169,11 @@ namespace myrmo { namespace cache { namespace policy
 		void clear() override
 		{
 			mData.clear();
-			mHashSize = 0;
 		}
 
 		size_t count() const override
 		{
-			return mData.size() / mHashSize; // Disregarding index file
+			return mData.size() / mHashSize;
 		}
 
 	private:

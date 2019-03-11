@@ -184,7 +184,7 @@ void test_disk_cache_eviction_policy()
 		for (size_t i = 0; i < IMAGE_COUNT; i++)
 			MYRMO_ASSERT(insertImage(cache, i) == DiskCache::Error::NoError);
 
-		// Assert only the last MiB og image data is in the cache.
+		// Assert only the last MiB of image data is in the cache.
 		size_t size = 0;
 		int pos = IMAGE_COUNT - 1;
 		while ((pos >= 0) && (size < (cacheSizeInBytes - images[pos].size)))
