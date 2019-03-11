@@ -31,3 +31,8 @@ add_executable(disk-cache-tests disk-cache-tests.cpp ${MYRMO_INCLUDE_DIR})
 target_link_libraries(disk-cache-tests PRIVATE cache_test_data)
 target_compile_definitions(disk-cache-tests PRIVATE -DMYRMO_TESTS_CACHE_DIR="${MYRMO_TESTS_CACHE_DIR}")
 add_test(NAME disk-cache-tests COMMAND disk-cache-test)
+
+add_executable(memory-cache-tests memory-cache-tests.cpp ${MYRMO_INCLUDE_DIR})
+target_link_libraries(memory-cache-tests PRIVATE cache_test_data)
+add_test(NAME memory-cache-tests COMMAND memory-cache-test)
+
