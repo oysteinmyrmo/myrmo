@@ -153,6 +153,11 @@ namespace myrmo { namespace cache
 			return write(uri, data.c_str(), data.size());
 		}
 
+		Error write(const std::string& uri, const std::vector<char>& data)
+		{
+			return write(uri, data.data(), data.size());
+		}
+
 		Error clear()
 		{
 			Error error = Error::NoError;
