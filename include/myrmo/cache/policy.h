@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <list>
 #include <set>
 #include <cstdint>
 #include <algorithm>
@@ -15,8 +16,7 @@ namespace myrmo { namespace cache { namespace policy
 		AlreadyExists,
 		DoesNotExist,
 		DataCorrupted,
-		ErroneousHashSize,
-		HashDoesNotExist
+		ErroneousHashSize
 	};
 
 	struct EvictionPolicy
@@ -29,8 +29,8 @@ namespace myrmo { namespace cache { namespace policy
 		virtual Error add(const std::string& hash) = 0;
 		virtual Error remove(const std::string& hash) = 0;
 		virtual std::string getIndexData() const = 0;
-		virtual std::string back() const = 0;
-		virtual std::string front() const = 0;
+		virtual const std::string& back() const = 0;
+		virtual const std::string& front() const = 0;
 		virtual void forEach(std::function<void(const std::string&hash)> callback) = 0;
 		virtual void clear() = 0;
 		virtual size_t count() const = 0;
@@ -53,11 +53,10 @@ namespace myrmo { namespace cache { namespace policy
 		Error setIndexData(const std::vector<char>& indexData) override
 		{
 			Error error = Error::NoError;
-			const size_t reserve = std::max(mHashSize * 100, indexData.size() / mHashSize + 10 * mHashSize);
 			mData.clear();
-			mData.reserve(reserve);
 			assert((indexData.size() % mHashSize) == 0);
-			mData.insert(mData.end(), indexData.begin(), indexData.end());
+			for (size_t i = 0; i < indexData.size(); i += mHashSize)
+				mData.insert(mData.end(), std::string(&indexData[i], mHashSize));
 			return error;
 		}
 
@@ -70,22 +69,16 @@ namespace myrmo { namespace cache { namespace policy
 				error = Error::ErroneousHashSize;
 				assert(false);
 			}
-			else if ((mData.size() % mHashSize) != 0)
-			{
-				error = Error::DataCorrupted;
-				assert(false);
-			}
 
 			if (error == Error::NoError)
 			{
 				error = Error::DoesNotExist;
-				for (size_t i = 0; i < mData.size(); i += mHashSize)
+				for (auto it = mData.begin(); it != mData.end(); it++)
 				{
-					if (memcmp(&mData[i], &hash[0], mHashSize) == 0)
+					if (*it == hash)
 					{
 						// Move hash to front.
-						mData.erase(mData.begin() + i, mData.begin() + i + mHashSize);
-						mData.insert(mData.begin(), hash.begin(), hash.end());
+						mData.splice(mData.begin(), mData, it);
 						error = Error::NoError;
 						break;
 					}
@@ -100,70 +93,39 @@ namespace myrmo { namespace cache { namespace policy
 			Error error = Error::NoError;
 			assert(exists(hash) == Error::DoesNotExist);
 			assert(hash.size() == mHashSize);
-			mData.insert(mData.begin(), hash.begin(), hash.end());
+			mData.insert(mData.begin(), hash);
 			return error;
 		}
 
 		Error remove(const std::string& hash) override
 		{
-			Error error = Error::HashDoesNotExist;
-
-			for (int i = 0; i < mData.size(); i += mHashSize)
-			{
-				if (memcmp(&mData[i], hash.data(), mHashSize) == 0)
-				{
-					std::vector<char> updated;
-					updated.reserve(mData.capacity());
-					updated.insert(updated.end(), mData.begin(), mData.begin() + i);
-					updated.insert(updated.end(), mData.begin() + i + mHashSize, mData.end());
-					mData.swap(updated);
-					error = Error::NoError;
-					break;
-				}
-			}
-
-			return error;
+			mData.remove(hash);
+			return Error::NoError;
 		}
 
 		std::string getIndexData() const override
 		{
 			std::string indexData;
-			indexData.reserve(mData.size());
-			indexData.insert(indexData.begin(), mData.begin(), mData.end());
+			indexData.reserve(mData.size() * mHashSize);
+			for (auto it = mData.begin(); it != mData.end(); it++)
+				indexData.insert(indexData.size(), *it);
 			return indexData;
 		}
 
-		std::string back() const override
+		const std::string& back() const override
 		{
-			std::string hash;
-			if (count())
-			{
-				hash.reserve(mHashSize);
-				hash.insert(hash.begin(), mData.end() - mHashSize, mData.end());
-			}
-			return hash;
+			return mData.back();
 		}
 
-		std::string front() const override
+		const std::string& front() const override
 		{
-			std::string hash;
-			if (count())
-			{
-				hash.reserve(mHashSize);
-				hash.insert(hash.begin(), mData.begin(), mData.begin() + mHashSize);
-			}
-			return hash;
+			return mData.front();
 		}
 
 		void forEach(std::function<void(const std::string&hash)> callback) override
 		{
-			for (size_t i = 0; i < mData.size(); i += mHashSize)
-			{
-				std::string hash;
-				hash.reserve(mHashSize);
-				hash.insert(hash.begin(), mData.begin() + i, mData.begin() + i + mHashSize);
+			for (const auto& hash : mData)
 				callback(hash);
-			}
 		}
 
 		void clear() override
@@ -173,11 +135,11 @@ namespace myrmo { namespace cache { namespace policy
 
 		size_t count() const override
 		{
-			return mData.size() / mHashSize;
+			return mData.size();
 		}
 
 	private:
-		std::vector<char> mData;
+		std::list<std::string> mData;
 		size_t mHashSize;
 	};
 
