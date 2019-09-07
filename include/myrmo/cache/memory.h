@@ -40,7 +40,8 @@ namespace myrmo { namespace cache
 			NoError,
 			ItemDoesNotExist,
 			CouldNotRemoveItem,
-			SizeExceedsCacheSize
+			SizeExceedsCacheSize,
+			ZeroSize
 		};
 
 		struct DataRef
@@ -64,6 +65,7 @@ namespace myrmo { namespace cache
 		{
 			const std::string hash(mHashFunction("myrmo_memory_cache"));
 			mPolicy->setHashSize(hash.size());
+			assert(mMaxCacheSize > 0);
 			mData.reserve(mMaxCacheSize);
 		}
 
@@ -96,7 +98,12 @@ namespace myrmo { namespace cache
 
 		Error write(const std::string& uri, const char* data, size_t size)
 		{
+			assert(size > 0);
+			if (size == 0)
+				return Error::ZeroSize;
+
 			Error error = Error::NoError;
+
 			const std::string hash(mHashFunction(uri));
 			assert(mPolicy->exists(hash) == policy::Error::DoesNotExist);
 
