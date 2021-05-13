@@ -166,11 +166,15 @@ namespace myrmo { namespace cache
 			while (hash.size())
 			{
 				error = removeFile(hash);
-				if (error != Error::NoError)
+				if ((error == Error::NoError) || (error == Error::FileDoesNotExist))
+				{
+					mPolicy->remove(hash);
+					hash = mPolicy->back();
+				}
+				else // Error::CouldNotDeleteFile
+				{
 					break;
-
-				mPolicy->remove(hash);
-				hash = mPolicy->back();
+				}
 			}
 
 			if (error == Error::NoError)
