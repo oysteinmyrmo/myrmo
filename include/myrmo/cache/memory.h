@@ -133,6 +133,7 @@ namespace myrmo { namespace cache
 		Error clear()
 		{
 			mData.clear();
+			mDataRefs.clear();
 			mPolicy->clear();
 			assert(mPolicy->count() == 0);
 			assert(size() == 0);
